@@ -1,0 +1,127 @@
+spring:
+  application:
+    name: kadali-data-platform
+  
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kadali_platform}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Kadali Data Platform Configuration
+kadali:
+  # Spark Configuration
+  spark:
+    master-url: ${SPARK_MASTER_URL:k8s://https://kubernetes.default.svc:443}
+    docker-image: ${SPARK_IMAGE:apache/spark:3.5.0-scala2.12-java17-ubuntu}
+    namespace: ${K8S_NAMESPACE:kadali-spark}
+    service-account: ${K8S_SERVICE_ACCOUNT:spark}
+    driver:
+      memory: "2g"
+      cores: 1
+    executor:
+      memory: "2g"
+      cores: 1
+      instances: 2
+  
+  # Kubernetes Configuration
+  kubernetes:
+    enabled: ${K8S_ENABLED:false}
+    config-path: ${K8S_CONFIG_PATH:~/.kube/config}
+    namespace: ${K8S_NAMESPACE:kadali}
+  
+  # Object Storage (S3/MinIO)
+  storage:
+    type: ${STORAGE_TYPE:minio}
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+    bucket-prefix: kadali-
+    lakehouse-path: ${LAKEHOUSE_PATH:s3a://kadali-lakehouse/}
+  
+  # Hive Metastore
+  metastore:
+    uri: ${METASTORE_URI:thrift://localhost:9083}
+    warehouse-dir: ${METASTORE_WAREHOUSE:/user/hive/warehouse}
+  
+  # JupyterHub
+  jupyter:
+    enabled: ${JUPYTER_ENABLED:false}
+    url: ${JUPYTER_URL:http://localhost:8000}
+    api-token: ${JUPYTER_API_TOKEN:}
+  
+  # Airflow
+  airflow:
+    enabled: ${AIRFLOW_ENABLED:false}
+    url: ${AIRFLOW_URL:http://localhost:8080}
+    username: ${AIRFLOW_USERNAME:admin}
+    password: ${AIRFLOW_PASSWORD:admin}
+  
+  # MLflow
+  mlflow:
+    enabled: ${MLFLOW_ENABLED:false}
+    tracking-uri: ${MLFLOW_TRACKING_URI:http://localhost:5000}
+    artifact-location: ${MLFLOW_ARTIFACT_LOCATION:s3://kadali-mlflow/}
+
+  # Resource Quotas
+  quotas:
+    free:
+      max-clusters: 1
+      max-cpu-cores: 2
+      max-memory-gb: 4
+      max-storage-gb: 10
+      max-notebooks: 10
+    startup:
+      max-clusters: 3
+      max-cpu-cores: 8
+      max-memory-gb: 16
+      max-storage-gb: 100
+      max-notebooks: 50
+    growth:
+      max-clusters: 10
+      max-cpu-cores: 32
+      max-memory-gb: 64
+      max-storage-gb: 1000
+      max-notebooks: -1
+    enterprise:
+      max-clusters: -1
+      max-cpu-cores: -1
+      max-memory-gb: -1
+      max-storage-gb: -1
+      max-notebooks: -1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.kadali: DEBUG
+    org.apache.spark: WARN
+    org.apache.hadoop: WARN

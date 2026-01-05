@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kadali-config
+  namespace: kadali
+data:
+  DATABASE_URL: "jdbc:postgresql://postgres:5432/kadali_platform"
+  DATABASE_USERNAME: "postgres"
+  STORAGE_ENDPOINT: "http://minio:9000"
+  STORAGE_ACCESS_KEY: "minioadmin"
+  LAKEHOUSE_PATH: "s3a://kadali-lakehouse/"
+  METASTORE_URI: "thrift://hive-metastore:9083"
+  K8S_ENABLED: "true"
+  K8S_NAMESPACE: "kadali"
+  SPARK_NAMESPACE: "kadali-spark"
+  SERVER_PORT: "8080"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kadali-secret
+  namespace: kadali
+type: Opaque
+stringData:
+  DATABASE_PASSWORD: "changeme-in-production"
+  STORAGE_SECRET_KEY: "changeme-in-production"
+  JWT_SECRET: "changeme-256-bit-secret-key-for-production"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kadali-api
+  namespace: kadali
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kadali-api
+  template:
+    metadata:
+      labels:
+        app: kadali-api
+    spec:
+      serviceAccountName: kadali-api
+      containers:
+      - name: kadali-api
+        image: your-registry/kadali-api:latest  # Update with your image
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: kadali-config
+        - secretRef:
+            name: kadali-secret
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kadali-api
+  namespace: kadali
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/actuator/prometheus"
+spec:
+  selector:
+    app: kadali-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kadali-api
+  namespace: kadali
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kadali-spark-manager
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "create"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kadali-api-spark-manager
+subjects:
+- kind: ServiceAccount
+  name: kadali-api
+  namespace: kadali
+roleRef:
+  kind: ClusterRole
+  name: kadali-spark-manager
+  apiGroup: rbac.authorization.k8s.io
+

@@ -1,0 +1,24 @@
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    clean-disabled: true
+
+kadali:
+  kubernetes:
+    enabled: true
+  vault:
+    enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.example.kadali: INFO
+    org.springframework.security: INFO
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+
+

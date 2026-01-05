@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kadali_platform_dev
+  jpa:
+    show-sql: true
+  flyway:
+    clean-disabled: false
+
+kadali:
+  security:
+    jwt:
+      secret: dev-secret-key-not-for-production-use-only
+  kubernetes:
+    enabled: false
+  vault:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.example.kadali: DEBUG
+    org.springframework.web: DEBUG
+
+

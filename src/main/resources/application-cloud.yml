@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: kadali-data-platform
+  
+  datasource:
+    # Use a cloud PostgreSQL (e.g., ElephantSQL free tier)
+    url: jdbc:postgresql://YOUR_CLOUD_POSTGRES_HOST:5432/YOUR_DATABASE
+    username: YOUR_USERNAME
+    password: YOUR_PASSWORD
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# MinIO / S3 Configuration
+minio:
+  # Use any S3-compatible service
+  endpoint: https://YOUR_S3_ENDPOINT
+  access-key: YOUR_ACCESS_KEY
+  secret-key: YOUR_SECRET_KEY
+  bucket: kadali-data-lake
+  region: us-east-1
+
+# Spark Configuration
+spark:
+  app:
+    name: kadali-spark-app
+  master: local[*]  # Run locally without Kubernetes
+  sql:
+    warehouse:
+      dir: s3a://kadali-data-lake/warehouse/
+  hadoop:
+    fs:
+      s3a:
+        endpoint: https://YOUR_S3_ENDPOINT
+        access:
+          key: YOUR_ACCESS_KEY
+        secret:
+          key: YOUR_SECRET_KEY
+        path:
+          style:
+            access: true
+        impl: org.apache.hadoop.fs.s3a.S3AFileSystem
+
+# Kubernetes (disabled for local)
+kubernetes:
+  enabled: false
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.kadali: INFO
+    org.springframework: INFO
+    org.apache.spark: WARN
+
