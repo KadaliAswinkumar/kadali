@@ -1,7 +1,6 @@
 package com.kadali.config;
 
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.io.FileInputStream;
 
 @Configuration
 @ConditionalOnProperty(name = "kadali.kubernetes.enabled", havingValue = "true")
@@ -22,22 +23,26 @@ public class KubernetesConfig {
     public KubernetesClient kubernetesClient() {
         log.info("Initializing Kubernetes client");
         
-        Config config;
-        if (configPath != null && !configPath.isEmpty()) {
-            config = new ConfigBuilder()
-                    .withKubeconfig(configPath)
+        try {
+            Config config;
+            if (configPath != null && !configPath.isEmpty()) {
+                // Load from specific kubeconfig file
+                config = Config.fromKubeconfig(new FileInputStream(configPath));
+            } else {
+                // Use auto-configuration (from default kubeconfig or in-cluster)
+                config = Config.autoConfigure(null);
+            }
+            
+            KubernetesClient client = new KubernetesClientBuilder()
+                    .withConfig(config)
                     .build();
-        } else {
-            // Use in-cluster configuration
-            config = Config.autoConfigure(null);
+            
+            log.info("Kubernetes client initialized. Master URL: {}", client.getMasterUrl());
+            return client;
+        } catch (Exception e) {
+            log.error("Failed to initialize Kubernetes client", e);
+            throw new RuntimeException("Failed to initialize Kubernetes client", e);
         }
-        
-        KubernetesClient client = new KubernetesClientBuilder()
-                .withConfig(config)
-                .build();
-        
-        log.info("Kubernetes client initialized. Master URL: {}", client.getMasterUrl());
-        return client;
     }
 }
 
