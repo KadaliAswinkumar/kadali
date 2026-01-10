@@ -105,12 +105,12 @@ public class K8sSparkClusterManager {
                             )
                             .withNewResources()
                                 .withRequests(Map.of(
-                                    "memory", driverMemory,
-                                    "cpu", String.valueOf(driverCores)
+                                    "memory", new Quantity(driverMemory),
+                                    "cpu", new Quantity(String.valueOf(driverCores))
                                 ))
                                 .withLimits(Map.of(
-                                    "memory", driverMemory,
-                                    "cpu", String.valueOf(driverCores)
+                                    "memory", new Quantity(driverMemory),
+                                    "cpu", new Quantity(String.valueOf(driverCores))
                                 ))
                             .endResources()
                             .addNewPort()
