@@ -9,7 +9,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Configuration
 @ConditionalOnProperty(name = "kadali.kubernetes.enabled", havingValue = "true")
@@ -27,7 +28,8 @@ public class KubernetesConfig {
             Config config;
             if (configPath != null && !configPath.isEmpty()) {
                 // Load from specific kubeconfig file
-                config = Config.fromKubeconfig(new FileInputStream(configPath));
+                String kubeconfigContent = new String(Files.readAllBytes(Paths.get(configPath)));
+                config = Config.fromKubeconfig(kubeconfigContent);
             } else {
                 // Use auto-configuration (from default kubeconfig or in-cluster)
                 config = Config.autoConfigure(null);
