@@ -25,7 +25,7 @@ public class KubernetesConfig {
         Config config;
         if (configPath != null && !configPath.isEmpty()) {
             config = new ConfigBuilder()
-                    .withKubeconfigPath(configPath)
+                    .withKubeconfig(configPath)
                     .build();
         } else {
             // Use in-cluster configuration
